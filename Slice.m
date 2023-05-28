@@ -53,24 +53,9 @@ classdef Slice < handle & matlab.mixin.Copyable
             obj.transform(transforms);
         end
 
-        function group = plot_reference(obj, plot_sag, group)
+        function group = plot_ref_line(obj, group)
             if nargin < 2
-                plot_sag = true;
-            end
-            if nargin < 3
-                group = hhggroup;
-            end
-
-            if plot_sag
-                currentFile = mfilename('fullpath');
-                [pathstr,~,~] = fileparts(currentFile);
-                ref_paths = loadSVG(fullfile(pathstr,'images', 'P.svg'));
-                transforms = {'translate', sprintf('%f,%f', -318.27, -903.278);...
-                              'scale', sprintf('%f,%f', -1/5.224, 1/5.224)};
-                for i=1:length(ref_paths)
-                    ref_paths(i).transform(transforms);
-                    ref_paths(i).plot(false, group)
-                end
+                group = gca;
             end
 
             if strcmpi(obj.plane, 'c')
@@ -78,7 +63,6 @@ classdef Slice < handle & matlab.mixin.Copyable
             elseif strcmpi(obj.plane, 'h')
                 line('xdata', [-15, 8], 'ydata', [obj.coord,obj.coord], 'Color', 'k')
             end
-            set(gca,'xdir','reverse')
         end
 
         function group = plot(obj, use3D, plot_fill)
@@ -149,6 +133,19 @@ classdef Slice < handle & matlab.mixin.Copyable
     end
 
     methods(Static)
+        function group = plot_reference()
+            group = hggroup;
+            currentFile = mfilename('fullpath');
+            [pathstr,~,~] = fileparts(currentFile);
+            ref_paths = loadSVG(fullfile(pathstr,'images', 'P.svg'));
+            transforms = {'translate', sprintf('%f,%f', -318.27, -903.278);...
+                          'scale', sprintf('%f,%f', -1/5.224, 1/5.224)};
+            for i=1:length(ref_paths)
+                ref_paths(i).transform(transforms);
+                ref_paths(i).plot(false, group)
+            end
+        end
+
         function P = mask_compare(BW, slice, x)
             tx = x(1); ty = x(2); sx = x(3); sy = -x(3); r = x(4);
             transforms = {'scale', sprintf('%f,%f', sx, sy);
