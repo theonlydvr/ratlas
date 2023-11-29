@@ -53,6 +53,12 @@ classdef Slice < handle & matlab.mixin.Copyable
             obj.transform(transforms);
         end
 
+        function invert_color(obj)
+            for i=1:length(obj.paths)
+                obj.paths(i).invert_color();
+            end
+        end
+
         function group = plot_ref_line(obj, group)
             if nargin < 2
                 group = gca;
@@ -120,15 +126,27 @@ classdef Slice < handle & matlab.mixin.Copyable
             BB = obj.bounding_box();
             sx0 = size(I,2) / (BB(3)-BB(1));
             sy0 = size(I,1) / (BB(4)-BB(2));
-            s0 = min(sx0, sy0);
-            tx0 = size(I,2) / 2;
-            p = patternsearch(@(x) obj.mask_compare(I,copy(obj),x), [tx0,0,s0,0],[],[],[],[],[-Inf,-Inf,0,0],[Inf, Inf, s0, 360]);
-            tx = p(1); ty = p(2); sx = p(3); sy = -p(3); r = p(4);
-            transforms = {'scale', sprintf('%f,%f', sx, sy);
-                          'rotate', num2str(r);
-                          'translate', sprintf('%f,%f', tx, ty)};
             snew = copy(obj);
+            transforms = {'translate', sprintf('%f,%f', -BB(1), -BB(2));...
+                          'scale', sprintf('%f,%f', sx0, sy0)};
             snew.transform(transforms);
+            BW2 = flip(snew.to_mask(size(I,1), size(I,2)));
+            points = detectSURFFeatures(BW2);
+            points2 = detectSURFFeatures(I);
+            [features1, validPoints1] = extractFeatures(BW2, points);
+            [features2, validPoints2] = extractFeatures(I, points2);
+            indexPairs = matchFeatures(features1, features2);
+            matchedPoints1 = validPoints1(indexPairs(:, 1), :);
+            matchedPoints2 = validPoints2(indexPairs(:, 2), :);
+            [tform, inlierIdx] = estgeotform2d(matchedPoints1,matchedPoints2,'similarity');
+            out = imwarp(BW2, tform);
+%             p = patternsearch(@(x) obj.mask_compare(I,copy(obj),x), [tx0,0,sx0,sy0,0],[],[],[],[],[-Inf,-Inf,0,0],[Inf, Inf, sx0, sy0, 360]);
+%             tx = p(1); ty = p(2); sx = p(3); sy = -p(4); r = p(5);
+%             transforms = {'scale', sprintf('%f,%f', sx, sy);
+%                           'rotate', num2str(r);
+%                           'translate', sprintf('%f,%f', tx, ty)};
+%             snew = copy(obj);
+%             snew.transform(transforms);
         end
     end
 
@@ -147,7 +165,7 @@ classdef Slice < handle & matlab.mixin.Copyable
         end
 
         function P = mask_compare(BW, slice, x)
-            tx = x(1); ty = x(2); sx = x(3); sy = -x(3); r = x(4);
+            tx = x(1); ty = x(2); sx = x(3); sy = -x(4); r = x(5);
             transforms = {'scale', sprintf('%f,%f', sx, sy);
                           'rotate', num2str(r);
                           'translate', sprintf('%f,%f', tx, ty)};
@@ -190,21 +208,15 @@ classdef Slice < handle & matlab.mixin.Copyable
                         y0 = 863.956;
                 end
             elseif strcmpi(plane,'h')
-                switch(coord)
-                    case '-4.74'
-                        sfy = 41.303;
-                        sfx = 41.274;
-                        x0 = 333.469;
-                        y0 = 590.301;
-                end
+                    sfy = 41.303;
+                    sfx = 41.274;
+                    x0 = 333.469;
+                    y0 = 590.301;
             elseif strcmpi(plane,'s')
-                switch(coord)
-                    case '0.1'
-                        sfy = 41.261;
-                        sfx = 41.261;
-                        x0 = 333.469;
-                        y0 = 879.788;
-                end
+                    sfy = 41.261;
+                    sfx = 41.261;
+                    x0 = 333.469;
+                    y0 = 879.788;
             end
         end
     end

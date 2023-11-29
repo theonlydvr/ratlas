@@ -171,7 +171,16 @@ classdef Path < handle & matlab.mixin.Copyable
 
         function cut(obj, L, s)
             for i=1:length(obj.parts)
-                obj.parts{i} = cutPolygon(obj.parts{i}, L, s, true);
+                obj.parts{i} = cutPolygon(obj.parts{i}, L, s);
+            end
+        end
+
+        function invert_color(obj)
+            if ~strcmp(obj.fill_color, 'none')
+                obj.fill_color(1:3) = 1 - obj.fill_color(1:3);
+            end
+            if ~strcmp(obj.stroke_color, 'none')
+                obj.stroke_color(1:3) = 1 - obj.stroke_color(1:3);
             end
         end
 
