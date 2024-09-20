@@ -13,7 +13,7 @@ classdef Slice < handle & matlab.mixin.Copyable
             obj.plane = upper(plane);
             currentFile = mfilename('fullpath');
             [pathstr,~,~] = fileparts(currentFile);
-            files = dir(fullfile(pathstr, "images"));
+            files = dir(fullfile(extractBefore(pathstr,'\src'), "images"));
             files = files(3:end);
             valid = files(startsWith({files.name},upper(plane)));
             names = {valid.name};
